@@ -2,6 +2,8 @@
 
 A Claude Code skill that makes Khan Academy style explainer videos: a pen draws while a voice explains. You describe the video, Claude writes a scene file, and one command renders the MP4.
 
+Write-up: [Claude Code skills for content: how I make Khan Academy style videos for free](https://haiderfarooq.dev/blog/claude-code-skills-for-content)
+
 ![The same scene on the blackboard and on the whiteboard](docs/board.jpg)
 
 It runs on your Mac with an HTML canvas, Playwright, ffmpeg and the built-in `say` voice. No API keys, no accounts, no editor.
