@@ -6,7 +6,7 @@ Write-up: [Claude Code skills for content: how I make Khan Academy style videos 
 
 ![The same scene on the blackboard and on the whiteboard](docs/board.jpg)
 
-It runs on your Mac with an HTML canvas, Playwright, ffmpeg and the built-in `say` voice. No API keys, no accounts, no editor.
+It runs on your own machine (macOS, Windows or Linux) with an HTML canvas, Playwright, ffmpeg and the system's built-in voice. No API keys, no accounts, no editor.
 
 ## What it makes
 
@@ -38,22 +38,39 @@ scene({
 
 ## Install
 
-You need macOS, Node 20 or newer, and ffmpeg (`brew install ffmpeg`). It also runs on Windows and Linux; see below.
+You need Node 20 or newer and ffmpeg.
+
+**macOS**
 
 ```sh
-git clone https://github.com/haiderfarooq3/khan-explainer ~/.claude/skills/khan-explainer
+brew install ffmpeg
+git clone https://github.com/WENGENG-boop/khan-explainer ~/.claude/skills/khan-explainer
 cd ~/.claude/skills/khan-explainer/scripts && npm install && npx playwright install chromium
 ```
 
-On Windows, in PowerShell:
+**Windows** (PowerShell)
 
 ```powershell
 winget install Gyan.FFmpeg eSpeak-NG.eSpeak-NG astral-sh.uv
-git clone https://github.com/haiderfarooq3/khan-explainer $HOME\.claude\skills\khan-explainer
+git clone https://github.com/WENGENG-boop/khan-explainer $HOME\.claude\skills\khan-explainer
 cd $HOME\.claude\skills\khan-explainer\scripts; npm install; npx playwright install chromium
 ```
 
-English and Chinese speak with the voices Windows ships; add more under Settings > Time & language > Speech, and espeak-ng covers the rest. Run the talking-head script from Git Bash.
+Open a new terminal afterwards so the new PATH is picked up. English and Chinese speak with the voices Windows ships; add more under Settings > Time & language > Speech, and espeak-ng speaks every other language. Run the talking-head script from Git Bash.
+
+**Linux** (Debian/Ubuntu)
+
+```sh
+sudo apt install ffmpeg espeak-ng fonts-noto-core fonts-noto-cjk fonts-noto-extra
+git clone https://github.com/WENGENG-boop/khan-explainer ~/.claude/skills/khan-explainer
+cd ~/.claude/skills/khan-explainer/scripts && npm install && npx playwright install --with-deps chromium
+```
+
+| | macOS | Windows | Linux |
+|---|---|---|---|
+| Free voice | `say` | Windows voices, then espeak-ng | espeak-ng |
+| Handwriting font | Bradley Hand | Ink Free | system cursive |
+| Talking-head cutout | macOS Vision | MediaPipe | MediaPipe |
 
 ## Use
 
@@ -76,6 +93,8 @@ node scripts/render.js examples/arabic.js arabic.mp4                      # righ
 node scripts/render.js examples/languages.js languages.mp4                # one word in eight languages
 ```
 
+In PowerShell, set the theme first: `$env:KHAN_THEME='light'; node scripts/render.js examples/ai-agents.js light.mp4` (then `Remove-Item env:KHAN_THEME`).
+
 Each render also prints the path of a contact sheet: the board at the end of every beat, in one image. That sheet is how Claude checks its own layout before it shows you anything.
 
 [SKILL.md](SKILL.md) is the full reference: the scene API, layout rules, the capture recipe for tutorials and the clip pipeline.
@@ -83,13 +102,18 @@ Each render also prints the path of a contact sheet: the board at the end of eve
 ## Optional extras
 
 - **A human voice.** Export `ELEVENLABS_API_KEY` and add `eleven: '<voice id>'` to a scene. The script is read in one take and cut back into beats, and takes are cached, so re-rendering the same words is free.
-- **Kokoro, a free local human voice.** `pip install kokoro soundfile`, then `kokoro: true` on a scene or `KHAN_TTS=kokoro` for any scene. English, Spanish, French, Hindi, Italian, Japanese, Portuguese and Chinese.
+- **Kokoro, a free local human voice.** Install it into a Python 3.12 environment at `scripts/.venv`, which the renderer finds on its own: `uv venv --python 3.12 scripts/.venv`, then `uv pip install --python scripts/.venv kokoro soundfile`. Put `kokoro: true` on a scene, or set `KHAN_TTS=kokoro` for any scene. English, Spanish, French, Hindi, Italian, Japanese, Portuguese and Chinese. [SKILL.md](SKILL.md) lists the extra packages for Japanese and Chinese.
 - **Any language on the board.** Arabic, Urdu and Hebrew are written right to left, Hindi, Thai, Chinese, Japanese, Korean, Russian and more left to right, each in a face that writes it properly. `lang: 'ar'` on a scene picks the matching voice. `node tests/run.js` renders them all.
-- **Real-audio clips** need [uv](https://docs.astral.sh/uv/). `scripts/clip_audio.py` transcribes locally with faster-whisper.
-- **The talking-head cutout** uses macOS Vision. It builds itself with `swiftc` the first time, which needs the Xcode command line tools. On Windows and Linux it uses MediaPipe instead, fetched by `uv`.
+- **Real-audio clips** need [uv](https://docs.astral.sh/uv/). `scripts/clip_audio.py` transcribes locally with faster-whisper. On Windows, yt-dlp cannot read Chrome or Edge cookies: export a `cookies.txt` from a signed-in YouTube tab and pass `--cookies cookies.txt`.
+- **The talking-head cutout** uses macOS Vision, which builds itself with `swiftc` the first time (needs the Xcode command line tools). On Windows and Linux it uses MediaPipe instead, fetched by `uv`.
+- **Slow model downloads.** Kokoro and faster-whisper download their models from Hugging Face on first use. If that hangs, set `HF_ENDPOINT=https://hf-mirror.com` for the first run.
+
+## Tests
+
+`node tests/run.js` renders every example and fifteen languages and fails on any layout warning; `node tests/fonts.js` shows which font each script gets. The latest full Windows run is in [tests/results/SUMMARY.md](tests/results/SUMMARY.md): 45 of 45 checks pass, with the talking head on real footage still to be verified.
 
 ## Credits
 
-Made by [Haider Farooq](https://github.com/haiderfarooq3). MIT licensed: use it, change it, ship videos with it.
+Made by [Haider Farooq](https://github.com/haiderfarooq3). Windows support in this fork by [WENGENG-boop](https://github.com/WENGENG-boop). MIT licensed: use it, change it, ship videos with it.
 
 Not affiliated with or endorsed by Khan Academy. "Khan Academy style" describes the look: handwriting on a board, drawn as it is explained.
