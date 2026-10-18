@@ -4,3 +4,6 @@ scripts/cutout
 .DS_Store
 *.mp4
 out/
+.venv/
+tests/results/**/*.wav
+tests/results/**/*.mov

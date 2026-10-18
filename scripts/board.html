@@ -4,26 +4,26 @@
 // Blackboard runtime. A scene file calls scene({...}); render.js then drives frame(t).
 // Every coordinate is in logical board units (1280x720 by default), rendered at SCALE.
 const SCALE = 1.5, cv = document.getElementById('c'), g = cv.getContext('2d');
-const FONT = '"Bradley Hand","Chalkboard SE","Marker Felt",cursive';
-// Each script in a face that writes it properly: a Mac face first, then a Noto face for other systems. Only scripts
+const FONT = '"Bradley Hand","Chalkboard SE","Marker Felt","Ink Free","Segoe Print",cursive';
+// Each script in a face that writes it properly: a Mac face first, then a Windows face, then a Noto face for other systems. Only scripts
 // made of plain strokes are set bold; a faked bold smears vowel marks and stacked consonants. Latin text has no entry.
 // The first that matches wins, so Urdu-only letters come before Arabic and kana before Han.
 const SCRIPTS = [
-  { re: /\p{Script=Hebrew}/u, face: '"Arial Hebrew","Noto Sans Hebrew"' },
-  { urdu: true, re: /[\u0679\u0688\u0691\u06BA\u06BE\u06C1\u06D2]/u, face: '"Noto Nastaliq Urdu"' },   // letters only Urdu uses: written in nastaliq
-  { arabic: true, re: /\p{Script=Arabic}/u, face: '"Traditional Arabic","Noto Naskh Arabic","Geeza Pro"' },
-  { re: /\p{Script=Syriac}|\p{Script=Thaana}|\p{Script=Nko}/u, face: '"Noto Sans Syriac","Noto Sans Thaana","Noto Sans NKo"' },
-  { re: /\p{Script=Devanagari}/u, face: '"Kohinoor Devanagari","Devanagari Sangam MN","Noto Sans Devanagari"' },
-  { re: /\p{Script=Bengali}/u, face: '"Kohinoor Bangla","Bangla Sangam MN","Noto Sans Bengali"' },
-  { re: /\p{Script=Gurmukhi}/u, face: '"Gurmukhi Sangam MN","Noto Sans Gurmukhi"' },
-  { re: /\p{Script=Gujarati}/u, face: '"Kohinoor Gujarati","Gujarati Sangam MN","Noto Sans Gujarati"' },
-  { re: /\p{Script=Tamil}/u, face: '"Tamil Sangam MN","Tamil MN","InaiMathi","Noto Sans Tamil"' },
-  { re: /\p{Script=Telugu}/u, face: '"Kohinoor Telugu","Telugu Sangam MN","Noto Sans Telugu"' },
-  { re: /\p{Script=Kannada}|\p{Script=Malayalam}|\p{Script=Sinhala}|\p{Script=Oriya}/u, face: '"Kannada Sangam MN","Malayalam Sangam MN","Sinhala Sangam MN","Oriya Sangam MN","Noto Sans Kannada","Noto Sans Malayalam","Noto Sans Sinhala","Noto Sans Oriya"' },
-  { re: /\p{Script=Thai}|\p{Script=Lao}|\p{Script=Khmer}|\p{Script=Myanmar}|\p{Script=Tibetan}/u, face: '"Thonburi","Lao Sangam MN","Khmer Sangam MN","Myanmar Sangam MN","Kailasa","Noto Sans Thai Looped","Noto Looped Thai","Noto Sans Thai","Noto Sans Lao","Noto Sans Khmer","Noto Sans Myanmar","Noto Serif Tibetan"' },
-  { re: /\p{Script=Hiragana}|\p{Script=Katakana}/u, bold: true, face: '"Klee","Hiragino Maru Gothic ProN","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans CJK JP"' },   // kana anywhere makes the Han in it Japanese
-  { re: /\p{Script=Hangul}/u, bold: true, face: '"Nanum Pen Script","Apple SD Gothic Neo","Noto Sans CJK KR"' },
-  { re: /\p{Script=Han}/u, bold: true, face: '"Hannotate SC","Kaiti SC","PingFang SC","Noto Sans CJK SC"' },
+  { re: /\p{Script=Hebrew}/u, face: '"Arial Hebrew","Arial","Noto Sans Hebrew"' },
+  { urdu: true, re: /[\u0679\u0688\u0691\u06BA\u06BE\u06C1\u06D2]/u, face: '"Noto Nastaliq Urdu","Urdu Typesetting","Segoe UI"' },   // letters only Urdu uses: written in nastaliq
+  { arabic: true, re: /\p{Script=Arabic}/u, face: '"Traditional Arabic","Sakkal Majalla","Noto Naskh Arabic","Geeza Pro","Segoe UI"' },
+  { re: /\p{Script=Syriac}|\p{Script=Thaana}|\p{Script=Nko}/u, face: '"Noto Sans Syriac","Noto Sans Thaana","Noto Sans NKo","Segoe UI Historic","MV Boli","Ebrima"' },
+  { re: /\p{Script=Devanagari}/u, face: '"Kohinoor Devanagari","Devanagari Sangam MN","Nirmala UI","Noto Sans Devanagari"' },
+  { re: /\p{Script=Bengali}/u, face: '"Kohinoor Bangla","Bangla Sangam MN","Nirmala UI","Noto Sans Bengali"' },
+  { re: /\p{Script=Gurmukhi}/u, face: '"Gurmukhi Sangam MN","Nirmala UI","Noto Sans Gurmukhi"' },
+  { re: /\p{Script=Gujarati}/u, face: '"Kohinoor Gujarati","Gujarati Sangam MN","Nirmala UI","Noto Sans Gujarati"' },
+  { re: /\p{Script=Tamil}/u, face: '"Tamil Sangam MN","Tamil MN","InaiMathi","Nirmala UI","Noto Sans Tamil"' },
+  { re: /\p{Script=Telugu}/u, face: '"Kohinoor Telugu","Telugu Sangam MN","Nirmala UI","Noto Sans Telugu"' },
+  { re: /\p{Script=Kannada}|\p{Script=Malayalam}|\p{Script=Sinhala}|\p{Script=Oriya}/u, face: '"Kannada Sangam MN","Malayalam Sangam MN","Sinhala Sangam MN","Oriya Sangam MN","Nirmala UI","Noto Sans Kannada","Noto Sans Malayalam","Noto Sans Sinhala","Noto Sans Oriya"' },
+  { re: /\p{Script=Thai}|\p{Script=Lao}|\p{Script=Khmer}|\p{Script=Myanmar}|\p{Script=Tibetan}/u, face: '"Thonburi","Lao Sangam MN","Khmer Sangam MN","Myanmar Sangam MN","Kailasa","Leelawadee UI","Myanmar Text","Microsoft Himalaya","Noto Sans Thai Looped","Noto Looped Thai","Noto Sans Thai","Noto Sans Lao","Noto Sans Khmer","Noto Sans Myanmar","Noto Serif Tibetan"' },
+  { re: /\p{Script=Hiragana}|\p{Script=Katakana}/u, bold: true, face: '"Klee","Hiragino Maru Gothic ProN","Hiragino Sans","Hiragino Kaku Gothic ProN","UD Digi Kyokasho N-R","Yu Gothic","Noto Sans CJK JP"' },   // kana anywhere makes the Han in it Japanese
+  { re: /\p{Script=Hangul}/u, bold: true, face: '"Nanum Pen Script","Apple SD Gothic Neo","Malgun Gothic","Noto Sans CJK KR"' },
+  { re: /\p{Script=Han}/u, bold: true, face: '"Hannotate SC","Kaiti SC","PingFang SC","KaiTi","Microsoft YaHei","Noto Sans CJK SC"' },
   { re: /\p{Script=Cyrillic}|\p{Script=Greek}|\p{Script=Armenian}|\p{Script=Georgian}/u, bold: true, face: '"Comic Sans MS","Noto Sans"' },
 ];
 const LETTER = /\p{L}/u, RTL = /\p{Script=Hebrew}|\p{Script=Arabic}|\p{Script=Syriac}|\p{Script=Thaana}|\p{Script=Nko}/u;

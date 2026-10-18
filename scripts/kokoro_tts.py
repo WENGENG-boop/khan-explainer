@@ -7,7 +7,7 @@ import json, sys
 import numpy as np, soundfile as sf
 from kokoro import KPipeline
 
-job = json.load(sys.stdin)
+job = json.loads(sys.stdin.buffer.read().decode('utf-8'))   # not sys.stdin: Windows decodes that in the locale's code page
 pipe = KPipeline(lang_code=job['voice'][0], repo_id='hexgrad/Kokoro-82M')   # the voice's first letter is its language
 for line in job['lines']:
     parts = [r.audio for r in pipe(line['text'], voice=job['voice'], speed=job.get('speed', 1.0)) if r.audio is not None]
