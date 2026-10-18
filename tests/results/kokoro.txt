@@ -1,0 +1,20 @@
+ok   ai-agents    13.63s
+ok   arabic       11.57s
+ok   languages    23.77s
+ok   ui-tutorial  15.43s
+ok   ar           5.60s
+ok   bn           4.90s
+ok   el           5.04s
+ok   es           5.08s
+ok   fa           5.10s
+ok   fr           5.87s
+ok   he           4.87s
+ok   hi           6.63s
+ok   ja           5.97s
+ok   ko           5.34s
+ok   ru           4.40s
+ok   ta           5.11s
+ok   th           6.11s
+ok   ur           5.07s
+ok   zh           6.67s
+all passed

@@ -1,0 +1,7 @@
+light-theme	PASS	10s	free 2692 MB before	light.txt	light/ai-agents.mp4
+transcribe	PASS	9s	free 2725 MB before	transcribe.txt	clip/transcript.txt,clip/transcript.json
+cut	PASS	3s	free 2635 MB before	cut.txt	clip/clips/01-the-loop/audio.wav,clip/clips/01-the-loop/words.txt
+real-audio-dark	PASS	3s	free 2587 MB before	clip-render-dark.txt	clip/clips/01-the-loop/out.mp4
+real-audio-light	PASS	3s	free 2628 MB before	clip-render-light.txt	clip/clips/01-the-loop/out-light.mp4
+talking-head-dark	PASS	8s	free 2606 MB before	talking-head-dark.txt	clip/clips/01-the-loop/cutout.mov,clip/clips/01-the-loop/head.mp4
+talking-head-light	PASS	1s	free 2579 MB before	talking-head-light.txt	clip/clips/01-the-loop/head-light.mp4

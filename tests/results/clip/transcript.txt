@@ -1,0 +1,5 @@
+[00:00.02 = 0.02] What is an AI agent?
+[00:02.60 = 2.60] It's software that uses a language model to think.
+[00:06.30 = 6.30] Picks a tool, and acts.
+[00:09.14 = 9.14] Then it looks at the result.
+[00:11.38 = 11.38] And repeats until the goal is done.

@@ -1,0 +1,2 @@
+Installed 24 packages in 489ms
+5 lines -> tests/results/clip/transcript.txt
