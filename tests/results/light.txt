@@ -1,0 +1,8 @@
+voice Microsoft Zira Desktop
+beat 1  0.30s  +2.09s  What is an AI agent?
+beat 2  2.54s  +3.56s  It's software that uses a language model to think,
+beat 3  6.25s  +2.61s  picks a tool, and acts.
+beat 4  9.02s  +2.15s  Then it looks at the result,
+beat 5  11.32s  +2.65s  and repeats until the goal is done.
+sheet C:\Users\weo\AppData\Local\Temp\khan-L3jjnK\sheet.jpg
+ok tests/results/light/ai-agents.mp4 14.97s

@@ -1,0 +1,4 @@
+beat 1  0.00s  +1.96s  picks a tool and acts
+beat 2  1.98s  +5.79s  then it looks at the result, and repeats
+sheet C:\Users\weo\AppData\Local\Temp\khan-ItUQbw\sheet.jpg
+ok tests/results/clip/clips/01-the-loop/out.mp4 7.80s

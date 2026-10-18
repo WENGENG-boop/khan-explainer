@@ -38,12 +38,22 @@ scene({
 
 ## Install
 
-You need macOS, Node 20 or newer, and ffmpeg (`brew install ffmpeg`).
+You need macOS, Node 20 or newer, and ffmpeg (`brew install ffmpeg`). It also runs on Windows and Linux; see below.
 
 ```sh
 git clone https://github.com/haiderfarooq3/khan-explainer ~/.claude/skills/khan-explainer
 cd ~/.claude/skills/khan-explainer/scripts && npm install && npx playwright install chromium
 ```
+
+On Windows, in PowerShell:
+
+```powershell
+winget install Gyan.FFmpeg eSpeak-NG.eSpeak-NG astral-sh.uv
+git clone https://github.com/haiderfarooq3/khan-explainer $HOME\.claude\skills\khan-explainer
+cd $HOME\.claude\skills\khan-explainer\scripts; npm install; npx playwright install chromium
+```
+
+English and Chinese speak with the voices Windows ships; add more under Settings > Time & language > Speech, and espeak-ng covers the rest. Run the talking-head script from Git Bash.
 
 ## Use
 
@@ -76,7 +86,7 @@ Each render also prints the path of a contact sheet: the board at the end of eve
 - **Kokoro, a free local human voice.** `pip install kokoro soundfile`, then `kokoro: true` on a scene or `KHAN_TTS=kokoro` for any scene. English, Spanish, French, Hindi, Italian, Japanese, Portuguese and Chinese.
 - **Any language on the board.** Arabic, Urdu and Hebrew are written right to left, Hindi, Thai, Chinese, Japanese, Korean, Russian and more left to right, each in a face that writes it properly. `lang: 'ar'` on a scene picks the matching voice. `node tests/run.js` renders them all.
 - **Real-audio clips** need [uv](https://docs.astral.sh/uv/). `scripts/clip_audio.py` transcribes locally with faster-whisper.
-- **The talking-head cutout** uses macOS Vision. It builds itself with `swiftc` the first time, which needs the Xcode command line tools.
+- **The talking-head cutout** uses macOS Vision. It builds itself with `swiftc` the first time, which needs the Xcode command line tools. On Windows and Linux it uses MediaPipe instead, fetched by `uv`.
 
 ## Credits
 

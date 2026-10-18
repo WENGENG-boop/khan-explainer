@@ -11,6 +11,8 @@ const [sceneFile, out] = process.argv.slice(2);
 const die = m => { console.error(m); process.exit(1); };
 if (!sceneFile || !out) die('usage: node render.js <scene.js> <out.mp4>');
 const MAC = process.platform === 'darwin';   // elsewhere espeak-ng stands in for `say`: rougher, but it speaks about a hundred languages
+const WIN = process.platform === 'win32';    // Windows speaks with its own installed voices first, espeak-ng for the languages it has none for
+const { pathToFileURL } = require('url');    // 'file://' + a C:\ path is not a URL
 let chromium;
 try { ({ chromium } = require('playwright')); }
 catch { die(`playwright missing. Run: cd ${__dirname} && npm install && npx playwright install chromium`); }
@@ -27,11 +29,23 @@ const SAY = { en: 'Samantha', ar: 'Majed', he: 'Carmit', hi: 'Lekha', zh: 'Tingt
               ru: 'Milena', el: 'Melina', tr: 'Yelda', id: 'Damayanti', es: 'Mónica', fr: 'Thomas', de: 'Anna', it: 'Alice', pt: 'Luciana',
               bn: 'Piya', ta: 'Vani', te: 'Geeta', kn: 'Soumya', uk: 'Lesya', vi: 'Linh', pl: 'Zosia', nl: 'Xander', sv: 'Alva', ms: 'Amira' };
 const ESPEAK = { en: 'en-us', zh: 'cmn' };   // every other code is espeak-ng's own: ur, fa, bn, ta, ...
+const winEspeak = WIN && path.join(process.env.ProgramFiles || 'C:\\Program Files', 'eSpeak NG', 'espeak-ng.exe');   // the installer's PATH entry only reaches new terminals
+const ESPEAK_BIN = winEspeak && fs.existsSync(winEspeak) ? winEspeak : 'espeak-ng';
+// Windows: System.Speech through PowerShell. Voices come from Settings > Time & language > Speech > Add voices.
+const ps = script => execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', 'Add-Type -AssemblyName System.Speech; ' + script], { encoding: 'utf8' });
+const winVoices = () => ps("(New-Object System.Speech.Synthesis.SpeechSynthesizer).GetInstalledVoices() | ? Enabled | % { $_.VoiceInfo.Name + '|' + $_.VoiceInfo.Culture }")
+  .split(/\r?\n/).filter(Boolean).map(l => { const [name, culture] = l.split('|'); return { name, culture: culture.toLowerCase() }; });
 function voiceFor(meta) {
   const lang = meta.lang || 'en';
+  if (WIN) {
+    const vs = winVoices(), named = meta.voice && vs.find(v => v.name === meta.voice);
+    const v = named || (!meta.voice && (vs.find(v => v.culture === (lang === 'en' ? 'en-us' : lang)) || vs.find(v => v.culture.split('-')[0] === lang)));
+    if (v) return { win: v.name };
+  }
   if (!MAC) {
-    try { execFileSync('espeak-ng', ['--version'], { stdio: 'ignore' }); }
-    catch { die('the free voice needs macOS `say`, or espeak-ng on other systems (apt install espeak-ng)'); }
+    try { execFileSync(ESPEAK_BIN, ['--version'], { stdio: 'ignore' }); }
+    catch { die(WIN ? `Windows has no voice installed for lang '${lang}' and espeak-ng is missing. Add a voice in Settings > Time & language > Speech, or: winget install eSpeak-NG.eSpeak-NG`
+                    : 'the free voice needs macOS `say`, or espeak-ng on other systems (apt install espeak-ng)'); }
     return meta.voice || ESPEAK[lang] || lang;
   }
   const voice = meta.voice || SAY[lang];
@@ -44,7 +58,12 @@ function tts(text, i, voice, rate) {
   const txt = path.join(tmp, `${i}.txt`), audio = path.join(tmp, MAC ? `${i}.aiff` : `${i}.wav`);
   fs.writeFileSync(txt, text);
   if (MAC) execFileSync('say', ['-v', voice, '-r', String(rate), '-o', audio, '-f', txt]);
-  else execFileSync('espeak-ng', ['-v', voice, '-s', String(rate), '-w', audio, '-f', txt]);
+  else if (voice.win) {   // SAPI rate runs -10..10 around its own default pace, which is close to `say` at 170 wpm
+    const q = s => `'${s.replace(/'/g, "''")}'`;
+    ps(`$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; $s.SelectVoice(${q(voice.win)}); $s.Rate = ${Math.max(-10, Math.min(10, Math.round((rate - 170) / 12)))}; ` +
+       `$s.SetOutputToWaveFile(${q(audio)}); $s.Speak([IO.File]::ReadAllText(${q(txt)}, [Text.Encoding]::UTF8)); $s.Dispose()`);
+  }
+  else execFileSync(ESPEAK_BIN, ['-v', voice, '-s', String(rate), '-w', audio, '-f', txt]);
   return audio;
 }
 
@@ -101,7 +120,8 @@ function kokoroTakes(meta, dir) {
   const todo = lines.filter(l => !fs.existsSync(l.out));
   if (todo.length) {
     fs.mkdirSync(cache, { recursive: true });
-    const py = process.env.KHAN_PYTHON || 'python3';
+    const venv = path.join(__dirname, '.venv', WIN ? 'Scripts/python.exe' : 'bin/python');   // a scripts/.venv made for Kokoro is picked up on its own
+    const py = process.env.KHAN_PYTHON || (fs.existsSync(venv) ? venv : WIN ? 'python' : 'python3');
     const r = spawnSync(py, [path.join(__dirname, 'kokoro_tts.py')], { input: JSON.stringify({ voice, speed, lines: todo }), stdio: ['pipe', 'inherit', 'inherit'] });
     if (r.status !== 0) die(`Kokoro failed. Install it with: ${py} -m pip install kokoro soundfile (set KHAN_PYTHON to use another Python)`);
   }
@@ -112,7 +132,7 @@ function kokoroTakes(meta, dir) {
   const browser = await chromium.launch(), page = await browser.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push(e.message));
-  await page.goto('file://' + path.join(__dirname, 'board.html'));
+  await page.goto(pathToFileURL(path.join(__dirname, 'board.html')).href);
   // The scene gets its own scope: a scene variable named like a helper (box, line, ring) must not be a redeclaration error.
   await page.addScriptTag({ content: `(() => {\n${fs.readFileSync(path.resolve(sceneFile), 'utf8')}\n})();` });
   const meta = await page.evaluate(() => window.sceneMeta());
@@ -127,7 +147,7 @@ function kokoroTakes(meta, dir) {
   const takes = meta.eleven && !meta.audio ? await elevenTakes(meta.beats, meta.eleven, dir) : null;
   const kok = !meta.audio && !takes && (meta.kokoro || process.env.KHAN_TTS === 'kokoro') ? kokoroTakes(meta, dir) : null;
   const voice = meta.audio || takes || kok ? null : voiceFor(meta);
-  if (!meta.audio) console.log(`voice ${takes ? 'ElevenLabs' : kok ? 'Kokoro' : voice}`);
+  if (!meta.audio) console.log(`voice ${takes ? 'ElevenLabs' : kok ? 'Kokoro' : voice.win || voice}`);
   const gap = meta.gap ?? (takes ? 0 : GAP);   // scene-level `gap` slows the pace: more air between beats. One take already has its own pauses.
   let at = LEAD;
   const clips = [];

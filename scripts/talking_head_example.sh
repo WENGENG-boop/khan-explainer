@@ -11,13 +11,15 @@ set -e -o pipefail
 [ -d "$1" ] && [ -f "$2" ] || { echo "usage: $0 <clip-folder> <source-video> [light]"; exit 1; }
 K="$(cd "$(dirname "$0")" && pwd)"; c="$1"; CUT="$K/cutout"; CROP="${CROP:-1000:780:460:50}"
 W=$(echo "$CROP" | cut -d: -f1); H=$(echo "$CROP" | cut -d: -f2)
-[ -x "$CUT" ] || swiftc -O "$K/cutout.swift" -o "$CUT"
+# macOS Vision (cutout.swift) where there is one, MediaPipe (cutout.py) everywhere else.
+if [ "$(uname)" = Darwin ]; then [ -x "$CUT" ] || swiftc -O "$K/cutout.swift" -o "$CUT"; cutout() { "$CUT" "$@"; }
+else cutout() { uv run --no-project --python 3.12 --with mediapipe==0.10.21 python "$K/cutout.py" "$@"; }; fi
 if [ ! -s "$c/cutout.mov" ]; then
   src=$(head -1 "$c/words.txt" | sed -E 's/.*\(source ([0-9]+):([0-9.]+) to.*/\1 \2/')
   t0=$(echo $src | awk '{printf "%.2f", $1*60+$2}')
   dur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$c/audio.wav")
   ffmpeg -v error -ss "$t0" -t "$dur" -i "$2" -vf "fps=30,crop=$CROP" -f rawvideo -pix_fmt bgra - \
-   | "$CUT" "$W" "$H" \
+   | cutout "$W" "$H" \
    | ffmpeg -y -v error -f rawvideo -pix_fmt bgra -s "${W}x${H}" -r 30 -i - -vf "scale=780:-2:flags=lanczos" \
        -c:v prores_ks -profile:v 4444 -pix_fmt yuva444p10le -an "$c/cutout.tmp.mov"
   mv "$c/cutout.tmp.mov" "$c/cutout.mov"

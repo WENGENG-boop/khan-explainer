@@ -19,6 +19,7 @@ from faster_whisper import WhisperModel
 
 SR = 16000
 norm = lambda s: re.sub(r"[^a-z0-9]", "", s.lower())
+sys.stdout.reconfigure(encoding="utf-8")   # Windows consoles default to a legacy code page that cannot print « »
 
 def load(path):   # raw mono floats from ffmpeg: sidesteps faster-whisper's own decoder
     raw = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"],
@@ -34,7 +35,7 @@ def transcribe(audio_path, work):
     out = [{"start": s.start, "end": s.end, "text": s.text.strip(),
             "words": [{"w": w.word.strip(), "s": round(w.start, 2), "e": round(w.end, 2)} for w in s.words]} for s in segs]
     json.dump(out, open(f"{work}/transcript.json", "w"))
-    with open(f"{work}/transcript.txt", "w") as f:
+    with open(f"{work}/transcript.txt", "w", encoding="utf-8") as f:
         for s in out: f.write(f"[{int(s['start']) // 60:02d}:{s['start'] % 60:05.2f} = {s['start']:.2f}] {s['text']}\n")
     print(f"{len(out)} lines -> {work}/transcript.txt")
 
@@ -52,7 +53,7 @@ def cut(audio_path, work, clips_path):
             if e < best: best, at = e, c + 0.0125
         return at
 
-    for n, c in enumerate(json.load(open(clips_path)), 1):
+    for n, c in enumerate(json.load(open(clips_path, encoding="utf-8")), 1):
         i = min(range(len(segs)), key=lambda k: abs(segs[k]["start"] - c["from"]))
         j = min(range(len(segs)), key=lambda k: abs(segs[k]["start"] - c["to"]))
         words = [w for s in segs[i:j + 1] for w in s["words"]]
@@ -69,7 +70,7 @@ def cut(audio_path, work, clips_path):
         subprocess.run(["ffmpeg", "-y", "-v", "error", "-ss", f"{t0:.3f}", "-t", f"{dur:.3f}", "-i", audio_path,
                         "-af", f"afade=t=in:d=0.02,afade=t=out:st={dur - 0.06:.3f}:d=0.06", "-ar", "48000", "-ac", "2", f"{d}/audio.wav"], check=True)
         got = list(m.transcribe(audio[int(t0 * SR):int(t1 * SR)], word_timestamps=True)[0])
-        with open(f"{d}/words.txt", "w") as f:
+        with open(f"{d}/words.txt", "w", encoding="utf-8") as f:
             f.write(f"# {c['slug']}  {dur:.2f}s  (source {int(t0) // 60}:{t0 % 60:05.2f} to {int(t1) // 60}:{t1 % 60:05.2f})\n# [seconds into audio.wav] word\n")
             for s in got: f.write(" ".join(f"[{w.start:.2f}] {w.word.strip()}" for w in s.words) + "\n")
         heard = [w.word.strip() for s in got for w in s.words]
